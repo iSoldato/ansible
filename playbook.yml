@@ -1,0 +1,41 @@
+- name: Install Docker and PostgreSQL
+  hosts: all
+  become: true
+  vars:
+    postgres_version: 13
+    postgres_data_dir: /var/lib/postgresql/{{ postgres_version }}/main
+  tasks:
+    - name: Install Docker
+      apt:
+        name: docker.io
+        state: present
+      when: "'app' in group_names"
+
+    - name: Start Docker service
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
+      when: "'app' in group_names"
+
+    - name: Install PostgreSQL
+      apt:
+        name: postgresql-{{ postgres_version }}
+        state: present
+      when: "'database' in group_names"
+
+    - name: Create data directory
+      file:
+        path: "{{ postgres_data_dir }}"
+        state: directory
+        owner: postgres
+        group: postgres
+        mode: '0700'
+      when: "'database' in group_names"
+
+    - name: Start PostgreSQL service
+      systemd:
+        name: postgresql
+        state: started
+        enabled: yes
+      when: "'database' in group_names"
